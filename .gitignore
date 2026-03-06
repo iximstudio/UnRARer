@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+*.xcuserdata
+xcuserdata/
+*.xcworkspace
+DerivedData/
+build/
+*.app
+*.dSYM
+
+# Windows / .NET
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.user
+*.suo
+.vs/
+*.nupkg
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini
