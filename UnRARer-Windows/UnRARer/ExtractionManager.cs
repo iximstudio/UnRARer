@@ -72,16 +72,15 @@ public class ExtractionManager
 
             using var archive = RarArchive.Open(rarFilePath, readerOptions);
 
-            // Check if archive is encrypted and no password provided
-            if (archive.IsComplete)
+            // Check if any entry in the archive is encrypted and no password provided
+            if (string.IsNullOrEmpty(password))
             {
                 foreach (var entry in archive.Entries)
                 {
-                    if (entry.IsEncrypted && string.IsNullOrEmpty(password))
+                    if (entry.IsEncrypted)
                     {
                         return ExtractionResult.PasswordRequired();
                     }
-                    break;
                 }
             }
 
