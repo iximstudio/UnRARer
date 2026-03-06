@@ -4,6 +4,16 @@ RAR file decompression tool for macOS and Windows.
 
 When you double-click a `.rar` file, UnRARer presents a dialog to confirm the extraction destination (defaulting to a new folder with the same name as the archive in the current directory). If the archive is password-protected, a password input field is provided. After confirmation the archive is extracted to the chosen location, and the app exits automatically on success.
 
+## Download
+
+Pre-built binaries are available on the [Releases](../../releases) page:
+
+| Platform | File | Notes |
+|----------|------|-------|
+| macOS (Intel & Apple Silicon) | `UnRARer-macOS.zip` | Requires macOS 12.0+. Also install `unrar` via `brew install unrar`. |
+| Windows x64 | `UnRARer-Windows-x64.zip` | Self-contained, no .NET runtime needed. |
+| Windows ARM64 | `UnRARer-Windows-arm64.zip` | Self-contained, no .NET runtime needed. |
+
 ## macOS Version
 
 ### Requirements
