@@ -1,11 +1,37 @@
 import Cocoa
 
+/// Custom document controller that intercepts RAR file opening.
+/// Without this, NSDocumentController tries to open RAR files as NSDocument
+/// instances, which fails because no NSDocument subclass exists for RAR files,
+/// resulting in "UnRARer cannot open files in the 'RAR Archive' format."
+class RARDocumentController: NSDocumentController {
+    override func openDocument(withContentsOf url: URL, display displayDocument: Bool, completionHandler: @escaping (NSDocument?, Bool, (any Error)?) -> Void) {
+        if url.pathExtension.lowercased() == "rar" {
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                appDelegate.handleOpenRAR(url.path)
+            }
+            completionHandler(nil, false, nil)
+        } else {
+            super.openDocument(withContentsOf: url, display: displayDocument, completionHandler: completionHandler)
+        }
+    }
+}
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var filesToExtract: [String] = []
+    private var hasFinishedLaunching = false
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Register custom document controller before any documents are opened.
+        // The first NSDocumentController instance created becomes the shared one.
+        _ = RARDocumentController()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        hasFinishedLaunching = true
+
         // If no files were passed via open events, check command-line arguments
         if filesToExtract.isEmpty {
             let args = CommandLine.arguments
@@ -38,6 +64,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Process the first file
         if let filePath = filesToExtract.first {
             showExtractionDialog(for: filePath)
+        }
+    }
+
+    /// Called by RARDocumentController when a RAR file is opened via double-click
+    /// or other system file-opening mechanisms.
+    func handleOpenRAR(_ path: String) {
+        filesToExtract.append(path)
+        if hasFinishedLaunching {
+            showExtractionDialog(for: path)
         }
     }
 
