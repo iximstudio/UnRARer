@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build macOS app (Universal)
+        run: |
+          xcodebuild -project UnRARer-macOS/UnRARer.xcodeproj \
+            -scheme UnRARer \
+            -configuration Release \
+            -archivePath ${{ runner.temp }}/UnRARer.xcarchive \
+            ARCHS="x86_64 arm64" \
+            ONLY_ACTIVE_ARCH=NO \
+            MACOSX_DEPLOYMENT_TARGET=12.0 \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Export app from archive
+        run: |
+          mkdir -p ${{ runner.temp }}/export
+          cp -R ${{ runner.temp }}/UnRARer.xcarchive/Products/Applications/UnRARer.app \
+            ${{ runner.temp }}/export/UnRARer.app
+
+      - name: Create zip
+        run: |
+          cd ${{ runner.temp }}/export
+          zip -r -y UnRARer-macOS.zip UnRARer.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: ${{ runner.temp }}/export/UnRARer-macOS.zip
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+            artifact_name: UnRARer-Windows-x64
+          - rid: win-arm64
+            artifact_name: UnRARer-Windows-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish
+        run: |
+          dotnet publish UnRARer-Windows/UnRARer/UnRARer.csproj `
+            -c Release `
+            -r ${{ matrix.rid }} `
+            --self-contained `
+            -p:PublishSingleFile=true `
+            -o publish
+
+      - name: Create zip
+        run: |
+          Copy-Item UnRARer-Windows/setup-file-association.bat publish/
+          Compress-Archive -Path publish/* -DestinationPath ${{ matrix.artifact_name }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.zip
+
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            UnRARer-macOS.zip
+            UnRARer-Windows-x64.zip
+            UnRARer-Windows-arm64.zip
